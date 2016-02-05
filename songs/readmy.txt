@@ -1,0 +1,10 @@
+Œ»ó“±“ü‚³‚ê‚Ä‚é‰¹Œ¹‚Ì–¼Ìˆê——
+
+[BGM]
+StageALL
+
+[SE]
+retry
+dead
+shoot
+Player_Damage
