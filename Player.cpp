@@ -344,9 +344,9 @@ HRESULT Player::Move(Stage* stage)
 		}*/
 
 		
-		//梯子での下移動(旧判定)
-		if (stage->GetChip((int)((HitZone.right-HitZone.left)+position.x) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.left)+ position.y) / BLOCK_CHIP) == 2
-			|| stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.left) + position.y) / BLOCK_CHIP) == 2)
+		//梯子での移動(暫定版)
+		if (stage->GetChip((int)(HitZone.right - 12) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2
+			|| stage->GetChip((int)(HitZone.left  + 12) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2)
 		{
 			if (g_pInput->IsKeyPush(DIK_DOWN))
 			{
@@ -356,12 +356,13 @@ HRESULT Player::Move(Stage* stage)
 				isGround = TRUE;
 				jcount = 0;
 
-				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom) / BLOCK_CHIP) == 1)
+				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom + moveS) / BLOCK_CHIP) == 1)
 				{
 					moveS = 0;
 
 				}
-				else if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top) / BLOCK_CHIP) == 0)
+				
+				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top) / BLOCK_CHIP) == 0)
 				{
 					
 				}
@@ -369,13 +370,7 @@ HRESULT Player::Move(Stage* stage)
 				position.y += moveS;
 				
 			}
-		}
 
-
-		//梯子での上移動
-		if (stage->GetChip((int)(position.x + PLAYER_SIZE) / BLOCK_CHIP, (int)(position.y + JUMP + PLAYER_SIZE) / BLOCK_CHIP) == 2
-			|| stage->GetChip((int)position.x / BLOCK_CHIP, (int)(position.y - JUMP) / BLOCK_CHIP) == 2)
-		{
 			if (g_pInput->IsKeyPush(DIK_UP))
 			{
 				direction = MS_UP;
@@ -383,7 +378,7 @@ HRESULT Player::Move(Stage* stage)
 				ladderflg = TRUE;
 				jcount = 0;
 
-				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom) / BLOCK_CHIP) == 1)
+				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top + moveS) / BLOCK_CHIP) == 1)
 				{
 					moveS = 0;
 
@@ -391,6 +386,11 @@ HRESULT Player::Move(Stage* stage)
 
 				position.y -= moveS;
 			}
+		}
+		else
+		{
+			isGround = FALSE;
+			ladderflg = FALSE;
 		}
 
 		/*
@@ -516,7 +516,7 @@ HRESULT Player::Move(Stage* stage)
 		&& !isGround)
 	{
 		//ポジション から引く値は (1フレーム前の自分のポジションを32で割った余り) + 1
-		position.y -= (BMPIkun % 32) + 1;
+		position.y -= (BMPIkun % BLOCK_CHIP) + 1;
 		isGround = TRUE;
 		jump = 0;
 		jcount = 0;
