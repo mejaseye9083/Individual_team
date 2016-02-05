@@ -90,3 +90,5 @@ HRESULT item::Drow(D3DXVECTOR3 pos)
 
 	return S_OK;
 }
+
+//tst
