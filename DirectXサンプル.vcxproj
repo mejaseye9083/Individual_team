@@ -87,6 +87,7 @@
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Bullet.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Clear.cpp" />
     <ClCompile Include="ClearScene.cpp" />
     <ClCompile Include="Effect2D.cpp" />
     <ClCompile Include="Enemy.cpp" />
@@ -114,6 +115,7 @@
     <ClInclude Include="Block.h" />
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Clear.h" />
     <ClInclude Include="ClearScene.h" />
     <ClInclude Include="Effect2D.h" />
     <ClInclude Include="Enemy.h" />

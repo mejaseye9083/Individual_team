@@ -189,11 +189,8 @@ HRESULT Player::Hit(UnitBase* pTarget)
 		//衝突判定
 		if (distance <= (PLAYER_SIZE * PLAYER_SIZE))
 		{
-			hp += 8;
-			if (hp >= 20)
-			{
-				hp = 20;
-			}
+
+			g_gameScene = SC_CLEAR;
 		}
 
 	}
@@ -481,6 +478,7 @@ HRESULT Player::Move(Stage* stage)
 		BMPIkun = (int)position.y;
 	}
 
+	//プレイヤーの左下か右下の位置にジャンプの値を足した位置のテーブルの値が1だった時の処理
 	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1 
 		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1 
 		&& !isGround)
@@ -491,8 +489,10 @@ HRESULT Player::Move(Stage* stage)
 		jump = 0;
 		jcount = 0;
 	}
-	else if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 1) / BLOCK_CHIP) == 0 
-		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 1) / BLOCK_CHIP) == 0 
+	//isGroundがTRUEだった場合はジャンプをせずに足場がなくなったはず(1は足場or壁ブロック)
+	//ジャンプせずに落下判定に入る場合の処理が下記の処理となる(自由落下)
+	else if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0 
+		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0 
 		&& !ladderflg)
 	{
 		isGround = FALSE;

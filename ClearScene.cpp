@@ -7,8 +7,9 @@
 
 //---------------インクルード-----------------------
 #include "ClearScene.h"
-
+#include "Clear.h"
 ClearScene::ClearScene()
 {
+	unit.push_back(new Clear);
 }
 

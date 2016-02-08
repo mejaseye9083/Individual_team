@@ -138,7 +138,7 @@ HRESULT Stage::Render()
 		}
 	}
 
-	recover.Drow(D3DXVECTOR3(40, 80, 0));
+	recover.Drow(D3DXVECTOR3((36*BLOCK_CHIP), (5*BLOCK_CHIP), 0));
 	return S_OK;
 }
 
