@@ -272,10 +272,10 @@ HRESULT Player::Render()
 HRESULT Player::Move(Stage* stage)
 {
 	//-----------当たり判定を追従させる------------
-	HitZone.left = 0 + position.x;
+	HitZone.left = 2 + position.x;
 	HitZone.top = 0 + position.y;
 
-	HitZone.right = 32 + position.x;
+	HitZone.right = 30 + position.x;
 	HitZone.bottom = 32 + position.y;
 	//---------------------------------------------
 
@@ -321,56 +321,31 @@ HRESULT Player::Move(Stage* stage)
 		}
 
 		//------------------要検証---------------------
-		/*if (g_pInput->IsKeyPush(DIK_DOWN))
-		{
-			if (stage->GetChip((int)(position.x + PLAYER_SIZE) / BLOCK_CHIP, (int)(position.y + JUMP + PLAYER_SIZE) / BLOCK_CHIP) == 2
-				|| stage->GetChip((int)position.x / BLOCK_CHIP, (int)(position.y - JUMP) / BLOCK_CHIP) == 2)
-			{
-				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom) / BLOCK_CHIP) == 1)
-				{
-					position.y += 0;
-					direction = MS_UP;
-					isGround = TRUE;
-					jcount = 0;
-				}
-				else
-				{
-					position.y += moveS;
-					direction = MS_UP;
-					isGround = TRUE;
-					jcount = 0;
-				}
-			}
-		}*/
+		
 
 		
 		//梯子での移動(暫定版)
-		if (stage->GetChip((int)(HitZone.right - 12) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2
-			|| stage->GetChip((int)(HitZone.left  + 12) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2)
+		if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2
+			|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2)
 		{
 			if (g_pInput->IsKeyPush(DIK_DOWN))
 			{
-
-				ladderflg = TRUE;
 				direction = MS_UP;
 				isGround = TRUE;
+				ladderflg = TRUE;
 				jcount = 0;
+				jumpBlock = FALSE;
 
 				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom + moveS) / BLOCK_CHIP) == 1)
 				{
 					moveS = 0;
 
 				}
-				
-				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top) / BLOCK_CHIP) == 0)
-				{
-					
-				}
 
 				position.y += moveS;
 				
 			}
-
+		//-----------------------------------------------------------------------------------------------
 			if (g_pInput->IsKeyPush(DIK_UP))
 			{
 				direction = MS_UP;
@@ -381,23 +356,21 @@ HRESULT Player::Move(Stage* stage)
 				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top + moveS) / BLOCK_CHIP) == 1)
 				{
 					moveS = 0;
+					jumpBlock = TRUE;
 
 				}
+				else
+				{
+					jumpBlock = FALSE;
+				}
 
-				position.y -= moveS;
+				position.y += -moveS;
 			}
 		}
 		else
 		{
-			isGround = FALSE;
 			ladderflg = FALSE;
 		}
-
-		/*
-		 * 現在梯子移動は別々に判定させているが、多少長くなっても一つのif文にまとめる方が良さそう
-		 * 後で修正するので要点のみ記載
-		 *
-		 */
 
 
 		//プレイヤーが真ん中に来るよう、横スクロール位置を算出
@@ -488,7 +461,7 @@ HRESULT Player::Move(Stage* stage)
 	
 
 	//--------------------------ジャンプする------------------------------
-	if (g_pInput->IsKeyTap(DIK_SPACE) && (jcount < JUMP_COUNT)&&isGround)
+	if ((g_pInput->IsKeyTap(DIK_SPACE) && (jcount < JUMP_COUNT)&&isGround) && !jumpBlock)
 	{
 		jump = JUMP;
 		jcount++;
@@ -496,8 +469,6 @@ HRESULT Player::Move(Stage* stage)
 		ladderflg = FALSE;
 	}
 
-	//番兵クン！バグの原因だけど現状の頼みの綱
-	int BMPIkun;
 
 	//isGroundがFALSEだったとき
 	if (!isGround)
@@ -508,7 +479,6 @@ HRESULT Player::Move(Stage* stage)
 		}
 		position.y += jump;
 		BMPIkun = (int)position.y;
-
 	}
 
 	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1 
@@ -516,21 +486,25 @@ HRESULT Player::Move(Stage* stage)
 		&& !isGround)
 	{
 		//ポジション から引く値は (1フレーム前の自分のポジションを32で割った余り) + 1
-		position.y -= (BMPIkun % BLOCK_CHIP) + 1;
+ 		position.y -= (BMPIkun % BLOCK_CHIP) + 1;
 		isGround = TRUE;
 		jump = 0;
 		jcount = 0;
 	}
 	else if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 1) / BLOCK_CHIP) == 0 
-		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 1) / BLOCK_CHIP) == 0 && !ladderflg)
+		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 1) / BLOCK_CHIP) == 0 
+		&& !ladderflg)
 	{
 		isGround = FALSE;
 		jump += GRAVITY;
 	}
 
 	//天井（と思われる場所）にぶつかった時
-	if (stage->GetChip((int)position.x / BLOCK_CHIP, (int)(position.y - JUMP) / BLOCK_CHIP) == 1)
+	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.top + jump -3) / BLOCK_CHIP) == 1
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.top + jump -3) / BLOCK_CHIP) == 1)
 	{
+		jump = (jump * -1);
+		jump += GRAVITY;
 	}
 
 	//--------------------------------------------------------------------
@@ -587,6 +561,12 @@ void Player::BulletUpdate()
 	}
 }
 
+
+//----------------------------------
+//機能：初期設定＆再初期化処理
+//引数：なし
+//戻値：なし
+//----------------------------------
 void Player::Reset()
 {
 	position.x = 100;
