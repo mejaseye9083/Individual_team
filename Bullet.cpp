@@ -1,7 +1,7 @@
 /*===========================================================================================
 概　要:弾の発射したときの軌道
 作成日:2015.06.26
-更新日:2016.01.14
+更新日:2016.02.15
 制作者:藤原順基
 =============================================================================================*/
 
@@ -18,6 +18,8 @@ Bullet::Bullet()
 {
 	//未発射段階
 	isShot = FALSE;
+
+	bulletlife = NULL;
 
 	//スプライト、2Dエフェクト、オーディオクラスの宣言
 	spt = new Sprite;
@@ -77,14 +79,16 @@ HRESULT Bullet::Update()
 			//弾の飛ぶ速度
 			position.x += 8;
 			//弾の消失位置
-			if (position.x > 640)
+			//if (position.x > 640)
 
-			{
-				//弾を未発射に戻す
-				isShot = FALSE;
-				//フラグを取り消して再度入力を待つ
-				unControl = FALSE;
-			}
+			//{
+			//	//弾を未発射に戻す
+			//	isShot = FALSE;
+			//	//フラグを取り消して再度入力を待つ
+			//	unControl = FALSE;
+			//}
+			bulletlife++;
+
 		}
 	}
 
@@ -98,17 +102,26 @@ HRESULT Bullet::Update()
 			//弾の飛ぶ速度
 			position.x -= 8;
 			//弾の消失位置
-			if (position.x < -40)
+			//if (position.x < -40)
 
-			{
-				//弾を未発射に戻す
-				isShot = FALSE;
-				//フラグを取り消して再度入力を待つ
-				unControl = FALSE;
-			}
+			//{
+			//	//弾を未発射に戻す
+			//	isShot = FALSE;
+			//	//フラグを取り消して再度入力を待つ
+			//	unControl = FALSE;
+			//}
+
+			bulletlife++;
+
 		}
 	}
+	if (bulletlife == 0xF0)
+	{
+ 	 	isShot = FALSE;
+		unControl = FALSE;
+		bulletlife = NULL;
 
+	}
 	//不具合でそうだけどとりあえずok
 	return S_OK;
 }
@@ -135,7 +148,10 @@ BOOL Bullet::Hit(Enemy* pEnemy)
 		{
 			//弾が当たったら弾を消す
 			isShot = FALSE;
+			bulletlife = NULL;
+			unControl = FALSE;
 
+			fvx->Draw();
 			pEnemy->Kill();
 			return TRUE;
 		}
@@ -179,11 +195,11 @@ BOOL Bullet::Shot(D3DXVECTOR3 playerPos, int dir)
 		switch (dir)
 		{
 		case MS_RIGHT:
-			position.x = playerPos.x +5;
+			position.x = playerPos.x +10;
 			break;
 
 		case MS_LEFT:
-			position.x = playerPos.x -5;
+			position.x = playerPos.x -10;
 			break;
 
 		default:

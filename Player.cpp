@@ -1,7 +1,7 @@
 /*===========================================================================================
 概　要:自機の設定
 作成日:2015.10.15
-更新日:2016.02.02
+更新日:2016.02.15
 制作者:藤原順基
 =============================================================================================*/
 
@@ -126,6 +126,7 @@ HRESULT Player::Update()
 	if (hp <= 0)
 	{
 		Reset();
+		audio->Play("dead");
 		g_gameScene = SC_GAMEOVER;
 	}
 
@@ -327,12 +328,14 @@ HRESULT Player::Move(Stage* stage)
 		{
 			if (g_pInput->IsKeyPush(DIK_DOWN))
 			{
+				//フラグ等々の乱立で見難いので後で要修正
 				direction = MS_UP;
 				isGround = TRUE;
 				ladderflg = TRUE;
 				jcount = 0;
 				jumpBlock = FALSE;
 
+				//進行方向が壁(1)だった場合は移動出来ないようにする
 				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom + moveS) / BLOCK_CHIP) == 1)
 				{
 					moveS = 0;
@@ -345,17 +348,21 @@ HRESULT Player::Move(Stage* stage)
 		//-----------------------------------------------------------------------------------------------
 			if (g_pInput->IsKeyPush(DIK_UP))
 			{
+				//フラグ等々の乱立で見難いので後で要修正
 				direction = MS_UP;
 				isGround = TRUE;
 				ladderflg = TRUE;
 				jcount = 0;
 
+				//進行方向が壁(1)だった場合は移動出来ないようにする
 				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top + moveS) / BLOCK_CHIP) == 1)
 				{
 					moveS = 0;
 					jumpBlock = TRUE;
 
 				}
+				//上記の判定はrectのトップ(頭の位置)なので、ジャンプできないようにしてある。
+				//1ピクセルでも離れたらジャンプ可能にフラグを切り替える
 				else
 				{
 					jumpBlock = FALSE;
@@ -364,6 +371,7 @@ HRESULT Player::Move(Stage* stage)
 				position.y += -moveS;
 			}
 		}
+		//それ以外は梯子を掴んでいないと見なし、梯子フラグをFALSEに変える
 		else
 		{
 			ladderflg = FALSE;
@@ -579,6 +587,6 @@ void Player::Reset()
 	direction = MS_RIGHT;
 
 	//asiba = 999;
-
+	
 	hp = PLAYER_HP;
 }
