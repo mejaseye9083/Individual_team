@@ -39,6 +39,7 @@ HRESULT Clear::Load()
 	{
 		return E_FAIL;
 	}
+	return S_OK;
 }
 
 //----------------------------------
@@ -49,10 +50,11 @@ HRESULT Clear::Load()
 HRESULT Clear::Update()
 {
 	//キーボードのEキーでシーン変更
-	if (g_pInput->IsKeyTap(DIK_E) /*|| g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_A)*/)
+	if (g_pInput->IsKeyTap(DIK_SPACE) /*|| g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_A)*/)
 	{
 		g_gameScene = SC_TITLE;
 	}
+	return S_OK;
 }
 
 //----------------------------------
@@ -71,4 +73,5 @@ HRESULT Clear::Render()
 	backdata.color.b = 255;
 	backdata.pos.z = 0;
 	back.Draw(&backdata);
+	return S_OK;
 }

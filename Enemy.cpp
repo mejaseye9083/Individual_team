@@ -8,7 +8,6 @@
 //---------------インクルード-----------------------
 #include "Enemy.h"
 #include "Camera.h"
-#include "Stage.h"
 #include "Player.h"
 
 //------------------定数宣言------------------------
@@ -17,10 +16,13 @@
 #define	JUMP			-20
 #define	JUMP_COUNT		1
 
-
 /*20151118
 参照できないエラーが発生してるので後で直す
 */
+
+
+
+Stage *Estg;
 
 //----------------------------------
 //機能：コンストラクタ
@@ -29,8 +31,8 @@
 //----------------------------------
 Enemy::Enemy()
 {
-	position.x = 500;
-	position.y = 300;
+	position.x = 6*BLOCK_CHIP;
+	position.y = 20*BLOCK_CHIP;
 
 	jump = 0;
 	jcount = 0;
@@ -57,6 +59,7 @@ Enemy::~Enemy()
 {
 	//安全に消去する
 	SAFE_DELETE(spt);
+	SAFE_DELETE(Estg);
 	SAFE_DELETE(fvx);
 }
 
@@ -89,7 +92,7 @@ HRESULT Enemy::Load()
 //----------------------------------
 HRESULT Enemy::Update()
 {
-	Move();
+	Move(Estg);
 	Shot();
 	return S_OK;
 }
@@ -101,6 +104,11 @@ HRESULT Enemy::Update()
 //----------------------------------
 HRESULT Enemy::Hit(UnitBase* pTarget)
 {
+	//-----------PlaySceneで呼び出したステージをstgに入れる---------
+	if (typeid(*pTarget) == typeid(Stage))
+	{
+		Estg = (Stage*)pTarget;
+	}
 	return S_OK;
 }
 
@@ -131,8 +139,15 @@ HRESULT Enemy::Render()
 //引数：なし
 //戻値：成功or失敗
 //----------------------------------
-HRESULT Enemy::Move()
+HRESULT Enemy::Move(Stage* stage)
 {
+	//-----------当たり判定を追従させる------------
+	HitZone.left = 2 + position.x;
+	HitZone.top = 0 + position.y;
+
+	HitZone.right = 30 + position.x;
+	HitZone.bottom = 32 + position.y;
+	//---------------------------------------------
 
 	//----------------------エネミーの移動------------------------------
 	switch (state)
@@ -163,29 +178,62 @@ HRESULT Enemy::Move()
 
 	case LOOK_ENEMY:
 		//--------------------------ジャンプする------------------------------
-		if (jcount<JUMP_COUNT)
+		if ((g_pInput->IsKeyTap(DIK_SPACE) && (jcount < JUMP_COUNT) && isGround) && !jumpBlock)
 		{
 			jump = JUMP;
 			jcount++;
+			isGround = FALSE;
+			ladderflg = FALSE;
 		}
-		else if (position.y < asiba)
-		{
-			jump += GRAVITY;
-		}
-		position.y += jump + INERTIA;
 
-		if (position.y >= asiba)
-		{
-			jump = 0;
-			position.y = asiba;
-			jcount = 0;
-		}
 		//--------------------------------------------------------------------
 
 		break;
 	}
 	//--------------------------------------------------------------------
 
+
+	//isGroundがFALSEだったとき
+	if (!isGround)
+	{
+		if (jump >= 10)
+		{
+			jump = 10;
+		}
+		position.y += jump;
+		BMPIkun = (int)position.y;
+	}
+
+	//プレイヤーの左下か右下の位置にジャンプの値を足した位置のテーブルの値が1だった時の処理
+	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1
+		&& !isGround)
+	{
+		//ポジション から引く値は (1フレーム前の自分のポジションを32で割った余り) + 1
+		position.y -= (BMPIkun % BLOCK_CHIP) + 1;
+		isGround = TRUE;
+		jump = 0;
+		jcount = 0;
+	}
+	//isGroundがTRUEだった場合はジャンプをせずに足場がなくなったはず(1は足場or壁ブロック)
+	//ジャンプせずに落下判定に入る場合の処理が下記の処理となる(自由落下)
+	else if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0
+		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0
+		&& !ladderflg)
+	{
+		isGround = FALSE;
+		jump += GRAVITY;
+	}
+
+	//天井（と思われる場所）にぶつかった時
+	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.top + jump - 3) / BLOCK_CHIP) == 1
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.top + jump - 3) / BLOCK_CHIP) == 1)
+	{
+		jump = (jump * -1);
+		jump += GRAVITY;
+	}
+
+	//-----------------------------------------
 
 	
 	return S_OK;
@@ -209,10 +257,10 @@ HRESULT Enemy::Shot()
 //----------------------------------
 void Enemy::Kill()
 {
-		moveE = 0;
+	g_gameScene = SC_CLEAR;
 
-		//爆発エフェクトを呼ぶためにpositionを引数として渡す
-		fvx->Add(position - D3DXVECTOR3(32, 32, 0));
+	//爆発エフェクトを呼ぶためにpositionを引数として渡す
+	fvx->Add(position - D3DXVECTOR3(32, 32, 0));
 }
 
 //----------------------------------

@@ -131,7 +131,7 @@ BOOL Bullet::Hit(Enemy* pEnemy)
 			(int)(position.y - (enemyPosition.y + g_stageScrollPosition.y)) *
 			(int)(position.y - (enemyPosition.y + g_stageScrollPosition.y));			//(0-0)*(0-0)+(0-0)*(0-0) =((0-0)*(0-0)) + ((0-0)*(0-0)) 
 
-		if (distance <= (16 * 16))
+		if (distance <= (24 * 24))
 		{
 			//’e‚ª“–‚½‚Á‚½‚ç’e‚ðÁ‚·
 			isShot = FALSE;
@@ -189,7 +189,7 @@ BOOL Bullet::Shot(D3DXVECTOR3 playerPos, int dir)
 		default:
 			break;
 		}
-		position.y = playerPos.y;
+		position.y = playerPos.y+16;
 
 		return TRUE;
 	}

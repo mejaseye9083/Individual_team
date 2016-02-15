@@ -10,6 +10,7 @@
 #include "Global.h"
 #include "UnitBase.h"
 #include "Effect2D.h"
+#include "Stage.h"
 
 //現在のスクロールの位置(PlayScene.cppで宣言済み)
 extern D3DXVECTOR3 g_stageScrollPosition;
@@ -28,6 +29,13 @@ class Enemy : public UnitBase
 
 	//エネミーの初期地点を記憶させる変数
 	D3DXVECTOR3 FixedPosition;
+	BOOL ladderflg = FALSE;
+	BOOL jumpBlock = FALSE;
+	BOOL isGround = FALSE;
+
+
+	int BMPIkun = 0;		//バグる原因を抑える番兵君
+
 
 	//--------------プレイヤーの状態------------------
 	enum
@@ -47,11 +55,11 @@ class Enemy : public UnitBase
 	};
 	//------------------------------------------------
 
-	int jump;			//ジャンプする時に代入する変数
-	int jcount;			//連続ジャンプ抑制
+	int jump;						//ジャンプする時に代入する変数
+	int jcount;						//連続ジャンプ抑制
 
-	HRESULT Move();		//移動
-	HRESULT Shot();		//攻撃
+	HRESULT Move(Stage* stage);		//移動
+	HRESULT Shot();					//攻撃
 
 public:
 	Enemy();

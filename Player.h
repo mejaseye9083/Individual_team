@@ -38,6 +38,8 @@ class Player : public UnitBase
 
 	BOOL ladderflg = FALSE;
 	BOOL jumpBlock = FALSE;
+	BOOL isGround = FALSE;
+
 
 	//--------------プレイヤーの状態------------------
 	enum
@@ -69,7 +71,6 @@ class Player : public UnitBase
 	Bullet bullet[BULLET_SET];		//発射できる弾の段数
 
 	BOOL isShotKeyFlg = FALSE;		//発射したかどうかの判定
-	BOOL isGround = FALSE;
 
 	void BulletUpdate();	//弾の更新
 

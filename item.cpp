@@ -87,6 +87,7 @@ HRESULT item::Drow(D3DXVECTOR3 pos)
 
 	Recover_Aid.Draw(&Recover);
 
+	position = pos;
 
 	return S_OK;
 }
