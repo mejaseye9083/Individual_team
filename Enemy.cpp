@@ -1,7 +1,7 @@
 /*===========================================================================================
 概　要:敵の移動・攻撃パターン
 作成日:2015.11.05
-更新日:2016.01.27
+更新日:2016.03.01
 制作者:藤原順基
 =============================================================================================*/
 
@@ -15,11 +15,6 @@
 #define	INERTIA			0.06
 #define	JUMP			-20
 #define	JUMP_COUNT		1
-
-/*20151118
-参照できないエラーが発生してるので後で直す
-*/
-
 
 
 Stage *Estg;
@@ -71,17 +66,10 @@ Enemy::~Enemy()
 HRESULT Enemy::Load()
 {
 	//プレイヤー画像の読み込み
-	if (FAILED(spt->Load("SamplePict\\Actor.png")))
+	if (FAILED(spt->Load("pictures\\Actor.png")))
 	{
 		return E_FAIL;
 	}
-
-
-	if (FAILED(fvx->Load("SamplePict\\bakuhatu.png", D3DXVECTOR2(128, 128), 0.2f)))
-	{
-		return E_FAIL;
-	}
-
 	return S_OK;
 }
 
@@ -92,8 +80,15 @@ HRESULT Enemy::Load()
 //----------------------------------
 HRESULT Enemy::Update()
 {
-	Move(Estg);
-	Shot();
+	//プレイヤーがストップしてる間は敵もストップ！
+	if (g_Stopflg == FALSE)
+	{
+		Move(Estg);
+		if (state == LOOK_ENEMY)
+		{
+			Shot();
+		}
+	}
 	return S_OK;
 }
 
@@ -108,6 +103,23 @@ HRESULT Enemy::Hit(UnitBase* pTarget)
 	if (typeid(*pTarget) == typeid(Stage))
 	{
 		Estg = (Stage*)pTarget;
+	}
+
+	if (typeid(*pTarget) == typeid(Player))
+	{
+		D3DXVECTOR3 playerPosition = pTarget->GetPos();
+		RECT playerSize = pTarget->GetZone();
+
+		//プレイヤーとエネミー間の距離を測る
+		if (((HitZone.left - 50 <= playerSize.right) && (HitZone.right + 50 >= playerSize.left)) 
+			&& ((HitZone.top - 60 <= playerSize.bottom ) && (HitZone.bottom + 30 >= playerSize.top)))
+		{
+			state = LOOK_ENEMY;
+		}
+		else 
+		{
+			state = DEFAULT;
+		}
 	}
 	return S_OK;
 }
@@ -178,7 +190,7 @@ HRESULT Enemy::Move(Stage* stage)
 
 	case LOOK_ENEMY:
 		//--------------------------ジャンプする------------------------------
-		if ((g_pInput->IsKeyTap(DIK_SPACE) && (jcount < JUMP_COUNT) && isGround) && !jumpBlock)
+		if ((jcount < JUMP_COUNT && isGround) && !jumpBlock)
 		{
 			jump = JUMP;
 			jcount++;
@@ -258,25 +270,4 @@ HRESULT Enemy::Shot()
 void Enemy::Kill()
 {
 	g_gameScene = SC_CLEAR;
-
-	//爆発エフェクトを呼ぶためにpositionを引数として渡す
-	fvx->Add(position - D3DXVECTOR3(32, 32, 0));
-}
-
-//----------------------------------
-//機能：プレイヤーとエネミー間の距離を測る
-//引数：なし
-//戻値：なし
-//----------------------------------
-void Enemy::Search()
-{
-	/*---------------------出来そうな処理---------------------------
-	 *1.自分のポジションから左右に一定の数値増やす
-	 *2.伸ばした場所から自分のポジションまでの距離感に何かが入ったらHit関数を呼び出す
-	 *3.Hitした時点で呼び出す = ステージかプレイヤーのいずれかなはず！
-	 *4.typeidで検証、そしてポインタにアドレスを渡す
-	 *5.ポジションを割り出してLOOK状態に移行する処理を書く!
-	 *6.プレイヤー発見！にしたい
-	 -------------------------------------------------------------*/
-
 }

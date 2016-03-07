@@ -1,52 +1,36 @@
 /*===========================================================================================
-概　要:敵の移動・攻撃パターン
-作成日:2015.11.05
-更新日:2017.01.27
+概　要:剣で攻撃するクラス
+作成日:2016.02.24
+更新日:2016.02.24
 制作者:藤原順基
 =============================================================================================*/
-
 #pragma once
+
 //---------------インクルード-----------------------
 #include "Global.h"
-#include "UnitBase.h"
+#include "Enemy.h"
 #include "Effect2D.h"
-#include "Stage.h"
 
 //現在のスクロールの位置(PlayScene.cppで宣言済み)
 extern D3DXVECTOR3 g_stageScrollPosition;
 
-extern BOOL g_Stopflg;
-
-class Enemy : public UnitBase
+//--------------バレットクラスの定義----------------
+class Bread
 {
-	Sprite *spt;		//スプライトクラスのポインタ宣言
-	Effect2D *fvx;		//エフェクト2Dクラスのポインタ宣言
+protected:
+	Sprite *spt;
+	Effect2D *fvx;
+	//位置
+	D3DXVECTOR3 position;
+	D3DXVECTOR3 enemyPosition = { NULL, NULL, NULL };
 
-	int anime;			//アニメーションの基点
-	int direction;		//向いてる方向
-	int asiba;
+	//弾の状態　（未発射かどうか）
+	BOOL isbread;
 
-	//エネミーの移動値を入れる
-	int moveE;
+	int breadlife;			//弾だけに偶にフラグが消えないので意図的に消すための変数
+	int breadDamage = 4;	//ブレードのダメージ量(エネミーにHP実装時に活躍)
 
-	//エネミーの初期地点を記憶させる変数
-	D3DXVECTOR3 FixedPosition;
-	BOOL ladderflg = FALSE;
-	BOOL jumpBlock = FALSE;
-	BOOL isGround = FALSE;
-
-
-	int BMPIkun = 0;		//バグる原因を抑える番兵君
-
-
-	//--------------プレイヤーの状態------------------
-	enum
-	{
-		DEFAULT,		//通常
-		LOOK_ENEMY,		//攻撃範囲に入った時
-	}state;
-	//------------------------------------------------
-
+	int dirflg = NULL;
 	//--------------プレイヤーの向き------------------
 	enum MOVE_SCENE
 	{
@@ -57,15 +41,9 @@ class Enemy : public UnitBase
 	};
 	//------------------------------------------------
 
-	int jump;						//ジャンプする時に代入する変数
-	int jcount;						//連続ジャンプ抑制
-
-	HRESULT Move(Stage* stage);		//移動
-	HRESULT Shot();					//攻撃
-
 public:
-	Enemy();
-	~Enemy();
+	Bread();
+	~Bread();
 
 	//----------------------------------
 	//機能：画像・音楽データの読み込み
@@ -79,14 +57,14 @@ public:
 	//引数：なし
 	//戻値：成功
 	//----------------------------------
-	HRESULT Update();
-
+	HRESULT Update(D3DXVECTOR3 playerPos);
+	
 	//----------------------------------
 	//機能：当たり判定
 	//引数：pTarget		敵の情報
 	//戻値：成功
 	//----------------------------------
-	HRESULT Hit(UnitBase* pTarget);
+	BOOL Hit(UnitBase* pTarget);	
 
 	//----------------------------------
 	//機能：描画処理
@@ -95,7 +73,8 @@ public:
 	//----------------------------------
 	HRESULT Render();
 
-	void Kill();
+	//弾の発射処理
+	BOOL bread(D3DXVECTOR3 playerPos, int dir);
 
+	void Reset();
 };
-

@@ -17,4 +17,6 @@ class PlayScene : public SceneBase
 public:
 	//コンストラクタ
 	PlayScene();
+
+	HRESULT Create();
 };

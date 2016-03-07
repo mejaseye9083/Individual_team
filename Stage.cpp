@@ -14,7 +14,6 @@ Block block;
 item  recover;
 
 //------------------定数宣言------------------------
-#define GROUND_HEIGHT	400		//地面の高さ（着地する高さ）
 #define GRAVITY			1		//重力
 #define	INERTIA			0.15
 #define	JUMP			-15
@@ -53,17 +52,6 @@ Stage::~Stage()
 //----------------------------------
 HRESULT Stage::Load()
 {
-
-	//背景画像のロード（3枚分）
-	char* fileName[] = { "A", "B", "C" };
-	for (DWORD i = 0; i < 3; i++)
-	{
-		char filePath[MAX_PATH];
-		wsprintf(filePath, "SamplePict\\%s.png", fileName[i]);
-		spt[i].Load(filePath);
-	}
-
-
 	//SE関連の読み込み(ステージはStageBGM類のみ)
 	if (FAILED(audio->Load("songs\\SE\\Rock_BGM.xwb", "songs\\SE\\Rock_BGM.xsb")))
 	{
@@ -72,7 +60,6 @@ HRESULT Stage::Load()
 
 	block.Load("pictures\\modelA.bmp");
 	recover.Load("pictures\\RecoverAid.png");
-	//Create();
 
 	return S_OK;
 }
@@ -86,12 +73,12 @@ HRESULT Stage::Update()
 {
 	//BGM:Technoはループ処理してある
 	//BOOL処理で最初はTRUEにしておき、中でFALSEに変えて二度と読み込まれないようにする
-	if (Def == TRUE)
+	if (Def == TRUE&&g_gameScene == SC_PLAY)
 	{
 		audio->Play("StageALL");
 		Def = FALSE;
 	}
-	return S_OK;
+
 	return S_OK;
 }
 
@@ -113,15 +100,6 @@ HRESULT Stage::Hit(UnitBase* pTarget)
 //----------------------------------
 HRESULT Stage::Render()
 {
-	//背景そのものはステージで構成する、ブロック関係は別クラスで
-	for (int i = 0; i < 3; i++)
-	{
-		SpriteData back; 
-		back.pos.x = g_stageScrollPosition.x;
-		back.pos.y = g_stageScrollPosition.y + i * WINDOW_HEIGHT;
-		back.pos.z = 1;
-		spt[i].Draw(&back);
-	}
 
 	//足場を表示させる位置：二次元配列等検討中
 	/*D3DXVECTOR3 Bpos(100, 350, 0);
@@ -138,7 +116,7 @@ HRESULT Stage::Render()
 		}
 	}
 
-	recover.Drow(D3DXVECTOR3((36*BLOCK_CHIP), (5*BLOCK_CHIP), 0));
+	recover.Drow(D3DXVECTOR3((25*BLOCK_CHIP), (33*BLOCK_CHIP), 0));
 	return S_OK;
 }
 
@@ -149,7 +127,7 @@ void Stage::Create()
 	ZeroMemory(table, sizeof(table));
 
 	//0:背景,1:壁,2~6:まだ指定してない
-	char szFile[MAX_PATH] = "Stage\\stage1b.csv";
+	char szFile[MAX_PATH] = "Stage\\stage2.csv";
 
 
 	HANDLE hFile;

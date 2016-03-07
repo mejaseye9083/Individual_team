@@ -13,6 +13,7 @@
 
 //現在のスクロール位置
 D3DXVECTOR3 g_stageScrollPosition;
+BOOL	g_Stopflg = FALSE;
 
 //----------------------------------
 //機能：コンストラクタ
@@ -21,10 +22,15 @@ D3DXVECTOR3 g_stageScrollPosition;
 //----------------------------------
 PlayScene::PlayScene()
 {
+	Create();
+}
 
-
+HRESULT PlayScene::Create()
+{
 	unit.push_back(new Stage);
 	//ユニットを追加
-	unit.push_back(new Player);
 	unit.push_back(new Enemy);
+	unit.push_back(new Player);
+	
+	return S_OK;
 }

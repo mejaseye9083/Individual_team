@@ -12,17 +12,21 @@
 #include "Effect2D.h"
 #include "Stage.h"
 #include "Bullet.h"
-
+#include "Bread.h"
 //現在のスクロールの位置(PlayScene.cppで宣言済み)
 extern D3DXVECTOR3 g_stageScrollPosition;
 
-#define PLAYER_DM 8			//1メモリ8なので、メモリを減らす際にダメージ×PLAYER_DM　的な
+extern BOOL g_Stopflg;
+
+#define PLAYER_DM 8			//1メモリ8なので、メモリを減らす際に使う。ダメージと特殊武器。
 #define PLAYER_HP 20		//ロックマンの体力、ライフアップとかはまだ実装しない
+#define PLAYER_SP 20		//HPと同じ数値だけど一応定義
 
 class Player : public UnitBase
 {
 	Sprite *ply;			//スプライトクラスのポインタ宣言
 	Sprite *life;			//ライフメモリ表示用スプライトクラス
+	Sprite *special;
 
 	//Effect2D *fvx;		//エフェクト2Dクラスのポインタ宣言
 	Audio *audio;
@@ -31,17 +35,21 @@ class Player : public UnitBase
 	int direction;			//向いてる方向
 	float asiba;
 
-	int hp = PLAYER_HP;					//ロックマンの体力	
+	int hp = PLAYER_HP;		//ロックマンの体力
+	int sp = PLAYER_SP;		//特殊武器の残量
 	int BMPIkun = 0;		//バグる原因を抑える番兵君
 
-	int memory_break = 0;	
+	int invincibleTime;
+
+	int memory_break_hp = 0;
+	int memory_break_sp = 0;
 
 	BOOL ladderflg = FALSE;
 	BOOL jumpBlock = FALSE;
 	BOOL isGround = FALSE;
 
 
-	//--------------プレイヤーの状態------------------
+	//--------------カメラの位置取り------------------
 	enum
 	{
 		DEFAULT,		//通常
@@ -50,6 +58,14 @@ class Player : public UnitBase
 		LEFT_SCROLL,
 		RIGHT_SCROLL,
 	}state;
+	//------------------------------------------------
+
+	//--------------プレイヤーの状態------------------
+	enum
+	{
+		PEASE,
+		DAMAGE,
+	}bonny;
 	//------------------------------------------------
 
 	//--------------プレイヤーの向き------------------
@@ -67,10 +83,13 @@ class Player : public UnitBase
 
 	HRESULT Move(Stage* stage);		//移動
 	HRESULT Shot();					//攻撃
+	HRESULT Jump();
 
 	Bullet bullet[BULLET_SET];		//発射できる弾の段数
+	Bread bread;
 
 	BOOL isShotKeyFlg = FALSE;		//発射したかどうかの判定
+	BOOL isSpecialFlg = FALSE;
 
 	void BulletUpdate();	//弾の更新
 
@@ -107,6 +126,6 @@ public:
 	HRESULT Render();
 
 	void Reset();
-	
+	void Invincible();
 };
 

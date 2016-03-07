@@ -1,12 +1,12 @@
 /*===========================================================================================
-概　要:弾の発射したときの軌道
-作成日:2015.06.26
-更新日:2016.02.15
+概　要:剣で攻撃するクラス
+作成日:2016.02.24
+更新日:2016.02.24
 制作者:藤原順基
 =============================================================================================*/
 
 //---------------インクルード-----------------------
-#include "Bullet.h"
+#include "Bread.h"
 #include "Camera.h"
 
 //----------------------------------
@@ -14,12 +14,12 @@
 //引数：なし
 //戻値：なし
 //----------------------------------
-Bullet::Bullet()
+Bread::Bread()
 {
 	//未発射段階
-	isShot = FALSE;
+	isbread = FALSE;
 
-	bulletlife = NULL;
+	breadlife = NULL;
 
 	//スプライト、2Dエフェクト、オーディオクラスの宣言
 	spt = new Sprite;
@@ -31,7 +31,7 @@ Bullet::Bullet()
 //引数：なし
 //戻値：なし
 //----------------------------------
-Bullet::~Bullet()
+Bread::~Bread()
 {
 
 	//ポインタのデリート処理、最優先で書く
@@ -44,10 +44,10 @@ Bullet::~Bullet()
 //引数：なし
 //戻値：成功or失敗
 //----------------------------------
-HRESULT Bullet::Load()
+HRESULT Bread::Load()
 {
 	//各種画像、エフェクト、音楽読み込み
-	if (FAILED(spt->Load("pictures\\RockB.png")))
+	if (FAILED(spt->Load("pictures\\bread.png")))
 	{
 		return E_FAIL;
 	}
@@ -61,38 +61,27 @@ HRESULT Bullet::Load()
 //引数：なし
 //戻値：成功
 //----------------------------------
-HRESULT Bullet::Update()
+HRESULT Bread::Update(D3DXVECTOR3 playerPos)
 {
-	if (isShot != FALSE){
-		//右向きの時は右に飛ばしっぱなしにしたい
-		if (dirflg == MS_RIGHT)
-		{
-			//ここでこの弾が向きの影響を受けないようにしたい
-			unControl = TRUE;
-			if (unControl == TRUE)
-			{
-				//弾の飛ぶ速度
-				position.x += 8;
-				bulletlife++;
-			}
-		}
 
-		//左も同様に飛ばしっぱなしにする！
-		if (dirflg == MS_LEFT)
+	if (isbread == TRUE)
+	{	//自分の位置 = 渡されたプレイヤーの位置
+		switch (dirflg)
 		{
-			//ここでこの弾が向きの影響を受けないようにしたい
-			unControl = TRUE;
-			if (unControl == TRUE)
-			{
-				//弾の飛ぶ速度
-				position.x -= 8;
-				bulletlife++;
-			}
+		case MS_RIGHT:
+			position.x = playerPos.x + 25;
+			break;
+
+		case MS_LEFT:
+			position.x = playerPos.x - 25;
+			break;
 		}
+		position.y = playerPos.y - 8;
+		breadlife++;
 	}
 
 	//弾の生存時間:4秒弱
-	if (bulletlife == 0xF0)
+	if (breadlife == 0xF)
 	{
 		Reset();
 	}
@@ -106,12 +95,12 @@ HRESULT Bullet::Update()
 //引数：pTarget		敵の位置情報
 //戻値：TRUEorFALSE
 //----------------------------------
-BOOL Bullet::Hit(UnitBase *pTarget)
+BOOL Bread::Hit(UnitBase *pTarget)
 {
-	if(typeid(*pTarget) == typeid(Enemy))
+	if (typeid(*pTarget) == typeid(Enemy))
 	{
 		Enemy *pEnemy = (Enemy*)pTarget;
-		if (isShot == TRUE)
+		if (isbread == TRUE)
 		{
 			//敵の位置をGetPosを通して受け取る
 			enemyPosition = pEnemy->GetPos();
@@ -122,7 +111,7 @@ BOOL Bullet::Hit(UnitBase *pTarget)
 				(int)(position.y - (enemyPosition.y + g_stageScrollPosition.y)) *
 				(int)(position.y - (enemyPosition.y + g_stageScrollPosition.y));			//(0-0)*(0-0)+(0-0)*(0-0) =((0-0)*(0-0)) + ((0-0)*(0-0)) 
 
-			if (distance <= (24 * 24))
+			if (distance <= (28 * 48))
 			{
 				//弾が当たったら弾を消す
 				Reset();
@@ -140,48 +129,61 @@ BOOL Bullet::Hit(UnitBase *pTarget)
 //引数：なし
 //戻値：成功
 //----------------------------------
-HRESULT Bullet::Render()
+HRESULT Bread::Render()
 {
 	SpriteData data;
 	//弾の描画を行う
-	if (isShot == TRUE)
+	if (isbread == TRUE)
 	{
 		data.pos = position;
- 		spt->Draw(&data);
+
+		data.size = D3DXVECTOR2(28, 48);
+
+		switch (dirflg)
+		{
+		case MS_RIGHT:
+			data.cut.x = 0*28;
+			break;
+
+		case MS_LEFT:
+			data.cut.x = 1 * 28;
+		}
+
+		spt->Draw(&data);
 	}
 	return S_OK;
 }
 
 //----------------------------------
-//機能：弾が飛ぶ処理
+//機能：剣で切る動作
 //引数：なし
 //戻値：TRUEorFALSE
 //----------------------------------
-BOOL Bullet::Shot(D3DXVECTOR3 playerPos, int dir)
+BOOL Bread::bread(D3DXVECTOR3 playerPos, int dir)
 {
 	//未発射のとき
-	if (isShot == FALSE)
+	if (isbread == FALSE)
 	{
-		isShot = TRUE;
+		isbread = TRUE;
 		dirflg = dir;
 
 		//自分の位置 = 渡されたプレイヤーの位置
 		switch (dir)
 		{
 		case MS_RIGHT:
-			position.x = playerPos.x + 10;
+			position.x = playerPos.x + 25;
 			break;
 
 		case MS_LEFT:
-			position.x = playerPos.x - 10;
+			position.x = playerPos.x - 25;
 			break;
 
 		default:
-			isShot = FALSE;
+			isbread = FALSE;
 			break;
 		}
 
-		position.y = playerPos.y + 16;
+		position.y = playerPos.y-8;
 		return TRUE;
 	}
 
@@ -189,17 +191,6 @@ BOOL Bullet::Shot(D3DXVECTOR3 playerPos, int dir)
 	return FALSE;
 }
 
-BOOL Bullet::SpecialA(D3DXVECTOR3 playerPos, int dir)
-{
-	//未発射のとき
-	if (isShot == FALSE)
-	{
-		isShot = TRUE;
-		position.y = playerPos.y -16;
-		return TRUE;
-	}
-	return FALSE;
-}
 /*-----------------------------問題点------------------------
 現状ポジションを受け取っている位置からバレットが飛ぶようになっている
 つまりカメラが移動してるときに中央にキャラを捉えている際に追従して上に跳ぶ
@@ -211,9 +202,8 @@ BOOL Bullet::SpecialA(D3DXVECTOR3 playerPos, int dir)
 //引数：なし
 //戻値：TRUEorFALSE
 //----------------------------------
-void Bullet::Reset()
+void Bread::Reset()
 {
-	isShot = FALSE;
-	unControl = FALSE;
-	bulletlife = NULL;
+	isbread = FALSE;
+	breadlife = NULL;
 }

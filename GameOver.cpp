@@ -6,9 +6,6 @@
 ===========================================================================================*/
 
 #include "GameOver.h"
-#include "Player.h"
-
-Player *pr;
 
 //----------------------------------
 //機能：コンストラクタ
@@ -50,9 +47,14 @@ HRESULT GameOver::Load()
 HRESULT GameOver::Update()
 {
 	//スペースキー及びコントローラーのAを押すとプレイシーンへ移行する
-	if (g_pInput->IsKeyTap(DIK_SPACE) /*|| g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_A)*/)
+	if (g_pInput->IsKeyTap(DIK_ESCAPE) /*|| g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_A)*/)
 	{
 		g_gameScene = SC_TITLE;
+	}
+
+	if (g_pInput->IsKeyTap(DIK_SPACE))
+	{
+		g_gameScene = SC_PLAY;
 	}
 	return S_OK;
 }

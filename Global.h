@@ -42,10 +42,10 @@
 //シーン
 enum GAME_SCENE
 {
-	SC_PLAY,		//プレイシーン
 	SC_TITLE,		//タイトルシーン
 	SC_CLEAR,		//クリアシーン
 	SC_GAMEOVER,	//ゲームオーバーシーン
+	SC_PLAY,		//プレイシーン
 	SC_MAX			//使うシーンは３つ、SC_MAXに入る値は3だからループ処理に使える
 };
 

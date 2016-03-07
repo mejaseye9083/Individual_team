@@ -12,6 +12,8 @@
 #include "Sprite.h"
 #include "Audio.h"
 
+static int testFlg = NULL;
+
 //―――――――――――――――――――――
 //	各ゲームユニットの親クラス
 //―――――――――――――――――――――

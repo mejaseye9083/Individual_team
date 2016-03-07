@@ -108,8 +108,11 @@
     <ClCompile Include="GameOver.cpp">
       <Filter>ソース ファイル\ユニット</Filter>
     </ClCompile>
+    <ClCompile Include="Bread.cpp">
+      <Filter>ソース ファイル\ユニット</Filter>
+    </ClCompile>
     <ClCompile Include="Clear.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\ユニット</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -188,8 +191,11 @@
     <ClInclude Include="GameOver.h">
       <Filter>ヘッダー ファイル\ユニット</Filter>
     </ClInclude>
+    <ClInclude Include="Bread.h">
+      <Filter>ヘッダー ファイル\ユニット</Filter>
+    </ClInclude>
     <ClInclude Include="Clear.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\ユニット</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

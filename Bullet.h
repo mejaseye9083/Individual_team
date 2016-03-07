@@ -17,14 +17,18 @@ extern D3DXVECTOR3 g_stageScrollPosition;
 //--------------バレットクラスの定義----------------
 class Bullet
 {
+protected:
 	Sprite *spt;
 	Effect2D *fvx;
 	//位置
 	D3DXVECTOR3 position;
+	D3DXVECTOR3 enemyPosition = {NULL,NULL,NULL};
 
 	//弾の状態　（未発射かどうか）
 	BOOL isShot;
 	BOOL unControl;
+
+	BOOL SpecialOrNormal;
 
 	int bulletlife;		//弾だけに偶にフラグが消えないので意図的に消すための変数
 
@@ -51,7 +55,7 @@ public:
 	//更新
 	HRESULT Update();
 	//衝突判定
-	BOOL Hit(Enemy* pEnemy);
+	BOOL Hit(UnitBase* pTarget);
 
 	//描画処理
 	//引数HDC デバイスコンテキストハンドル
@@ -61,4 +65,7 @@ public:
 	//弾の発射処理
 	BOOL Shot(D3DXVECTOR3 playerPos,int dir);
 
+	BOOL SpecialA(D3DXVECTOR3 playerPos, int dir);
+
+	void Reset();
 };
