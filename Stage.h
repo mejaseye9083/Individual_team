@@ -11,7 +11,7 @@
 #include "UnitBase.h"
 #include "Effect2D.h"
 #include "Block.h"
-#include "item.h"
+#include "RecoveryItem.h"
 
 //-------------------定数宣言-----------------------
 #define GROUND_HEIGHT		400		//地面の高さ（着地する高さ）

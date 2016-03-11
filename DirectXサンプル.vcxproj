@@ -100,7 +100,7 @@
     <ClCompile Include="GameOver.cpp" />
     <ClCompile Include="GameOverScene.cpp" />
     <ClCompile Include="Input.cpp" />
-    <ClCompile Include="item.cpp" />
+    <ClCompile Include="RecoveryItem.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Player.cpp" />
@@ -130,7 +130,7 @@
     <ClInclude Include="GameOverScene.h" />
     <ClInclude Include="Global.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="item.h" />
+    <ClInclude Include="RecoveryItem.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayScene.h" />

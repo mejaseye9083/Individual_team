@@ -54,7 +54,7 @@ HRESULT Title::Load()
 HRESULT Title::Update()
 {
 	//スペースキー及びコントローラーのAを押すとプレイシーンへ移行する
-	if (g_pInput->IsKeyTap(DIK_E) /*|| g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_A)*/)
+	if (g_pInput->IsKeyTap(DIK_E) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_A))
 	{
 		g_gameScene = SC_PLAY;
 	}

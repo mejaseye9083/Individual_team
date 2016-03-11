@@ -6,14 +6,14 @@
 ===========================================================================================*/
 
 //---------------インクルード-----------------------
-#include "item.h"
+#include "RecoveryItem.h"
 
 //----------------------------------
 //機能：コンストラクタ
 //引数：なし
 //戻値：なし
 //----------------------------------
-item::item()
+RecoveryItem::RecoveryItem()
 {
 }
 
@@ -22,7 +22,7 @@ item::item()
 //引数：なし
 //戻値：なし
 //----------------------------------
-item::~item()
+RecoveryItem::~RecoveryItem()
 {
 }
 
@@ -31,7 +31,7 @@ item::~item()
 //引数：なし
 //戻値：成功or失敗
 //----------------------------------
-HRESULT item::Load(char *filename)
+HRESULT RecoveryItem::Load(char *filename)
 {
 	if (FAILED(Recover_Aid.Load(filename)))
 	{
@@ -46,7 +46,7 @@ HRESULT item::Load(char *filename)
 //引数：なし
 //戻値：成功
 //----------------------------------
-HRESULT item::Update()
+HRESULT RecoveryItem::Update()
 {
 	return S_OK;
 }
@@ -56,7 +56,7 @@ HRESULT item::Update()
 //引数：pTarget		敵の情報
 //戻値：成功
 //----------------------------------
-HRESULT item::Hit(UnitBase* pTarget)
+HRESULT RecoveryItem::Hit(UnitBase* pTarget)
 {
 	return S_OK;
 }
@@ -66,7 +66,7 @@ HRESULT item::Hit(UnitBase* pTarget)
 //引数：なし
 //戻値：成功or失敗
 //----------------------------------
-HRESULT item::Render()
+HRESULT RecoveryItem::Render()
 {
 	return S_OK;
 }
@@ -76,7 +76,7 @@ HRESULT item::Render()
 //引数：なし
 //戻値：成功or失敗
 //----------------------------------
-HRESULT item::Drow(D3DXVECTOR3 pos)
+HRESULT RecoveryItem::Drow(D3DXVECTOR3 pos)
 {
 
 	SpriteData Recover;

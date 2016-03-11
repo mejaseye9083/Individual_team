@@ -13,11 +13,15 @@
 #include "Stage.h"
 #include "Bullet.h"
 #include "Bread.h"
+#include "RecoveryItem.h"
+
 //現在のスクロールの位置(PlayScene.cppで宣言済み)
 extern D3DXVECTOR3 g_stageScrollPosition;
 
+//メニュー及び一時停止するときのフラグ
 extern BOOL g_Stopflg;
 
+//--------------------定数宣言---------------------
 #define PLAYER_DM 8			//1メモリ8なので、メモリを減らす際に使う。ダメージと特殊武器。
 #define PLAYER_HP 20		//ロックマンの体力、ライフアップとかはまだ実装しない
 #define PLAYER_SP 20		//HPと同じ数値だけど一応定義
@@ -33,20 +37,22 @@ class Player : public UnitBase
 
 	int anime;				//アニメーションの基点
 	int direction;			//向いてる方向
-	float asiba;
 
 	int hp = PLAYER_HP;		//ロックマンの体力
 	int sp = PLAYER_SP;		//特殊武器の残量
-	int BMPIkun = 0;		//バグる原因を抑える番兵君
+	int guardman = 0;		//バグる原因を抑える番兵君
 
 	int invincibleTime;
 
 	int memory_break_hp = 0;
 	int memory_break_sp = 0;
 
-	BOOL ladderflg = FALSE;
-	BOOL jumpBlock = FALSE;
-	BOOL isGround = FALSE;
+	BOOL ladderflg = FALSE;			//梯子を使用しているかしていないか
+	BOOL jumpBlock = FALSE;			//頭上にブロックがある場合はTRUE
+	BOOL isGround = FALSE;			//地上に足が着いているか
+	BOOL isShotKeyFlg = FALSE;		//発射したかどうかの判定
+	BOOL isSpecialFlg = FALSE;		
+
 
 
 	//--------------カメラの位置取り------------------
@@ -80,18 +86,19 @@ class Player : public UnitBase
 
 	int jump;			//ジャンプする時に代入する変数
 	int jcount;			//連続ジャンプ抑制
+	int moveS;
 
-	HRESULT Move(Stage* stage);		//移動
-	HRESULT Shot();					//攻撃
-	HRESULT Jump();
+	HRESULT Move(Stage* stage);			//移動
+	HRESULT Jump(Stage* stage);			//ジャンプ
+	HRESULT LadderMove(Stage* stage);	//梯子移動
+	HRESULT Shot();						//射撃攻撃
+	HRESULT	Slash();					//剣攻撃
+	
+	Bullet bullet[BULLET_SET];			//発射できる弾の段数
+	Bread  bread;
 
-	Bullet bullet[BULLET_SET];		//発射できる弾の段数
-	Bread bread;
-
-	BOOL isShotKeyFlg = FALSE;		//発射したかどうかの判定
-	BOOL isSpecialFlg = FALSE;
-
-	void BulletUpdate();	//弾の更新
+	void AttackUpdate();	//攻撃処理の更新
+	void DebugCommand();	//デバッグ用関数
 
 public:
 	Player();
@@ -117,6 +124,27 @@ public:
 	//戻値：成功
 	//----------------------------------
 	HRESULT Hit(UnitBase* pTarget);	
+
+	//----------------------------------
+	//機能：当たり判定
+	//引数：pEnemyにキャストしたpTargetの情報
+	//戻値：成功
+	//----------------------------------
+	HRESULT HitEnemy(Enemy* pEnemy);
+
+	//----------------------------------
+	//機能：当たり判定
+	//引数：pStageにキャストしたpTargetの情報
+	//戻値：成功
+	//----------------------------------
+	HRESULT HitStage(Stage* pStage);
+
+	//----------------------------------
+	//機能：当たり判定
+	//引数：pItemにキャストしたpTargetの情報
+	//戻値：成功
+	//----------------------------------
+	HRESULT HitItem(RecoveryItem* pItem);
 
 	//----------------------------------
 	//機能：描画処理

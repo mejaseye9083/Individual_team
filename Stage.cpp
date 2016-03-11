@@ -11,7 +11,7 @@
 
 
 Block block;
-item  recover;
+RecoveryItem  recover;
 
 //------------------’è”éŒ¾------------------------
 #define GRAVITY			1		//d—Í

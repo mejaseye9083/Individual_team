@@ -11,12 +11,6 @@
 #include "Enemy.h"
 #include "Block.h"
 
-/*
- * 現在エラーが発生中、原因は下記のステージのポインタっぽい
- *
- *
- */
-
 Stage *stg;
 
 //------------------定数宣言------------------------
@@ -24,6 +18,19 @@ Stage *stg;
 #define	INERTIA			0.06
 #define	JUMP			-12
 #define	JUMP_COUNT		1
+
+//移動操作
+#define	MOVE_RIGHT	(g_pInput->IsKeyPush(DIK_RIGHT) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_DPAD_RIGHT))
+#define MOVE_LEFT	(g_pInput->IsKeyPush(DIK_LEFT) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_DPAD_LEFT))
+#define	MOVE_UP		(g_pInput->IsKeyPush(DIK_DOWN) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_DPAD_DOWN))
+#define MOVE_DOWN	(g_pInput->IsKeyPush(DIK_UP) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_DPAD_UP))
+#define	PUSH_START	g_pInput->IsKeyTap(DIK_J)||g_pInput->IsPadButtonTap(XINPUT_GAMEPAD_START)
+#define	PUSH_BACK	g_pInput->IsKeyTap(DIK_U)||g_pInput->IsPadButtonTap(XINPUT_GAMEPAD_BACK)
+
+//攻撃操作
+#define	ATTACK_A	(g_pInput->IsKeyTap(DIK_Z) || g_pInput->IsPadButtonTap(XINPUT_GAMEPAD_A))
+#define ATTACK_B	(g_pInput->IsKeyTap(DIK_X) || g_pInput->IsPadButtonTap(XINPUT_GAMEPAD_B))
+
 
 //----------------------------------
 //機能：コンストラクタ
@@ -113,16 +120,18 @@ HRESULT Player::Load()
 HRESULT Player::Update()
 {
 	//ストップボタン（ポーズ）
-	if (g_pInput->IsKeyTap(DIK_J))
+	if (PUSH_START)
 	{
 		g_Stopflg = !g_Stopflg;
 	}
 
+	//ポーズ画面になっていないorメニュー画面が開かれていないとき
 	if (g_Stopflg == FALSE)
 	{
 		//移動時に二次元配列のテーブルを利用する
 		Move(stg);
 		Shot();
+		Slash();
 
 		//ヒットポイントが0以下になったらゲームオーバー
 		if (hp <= 0)
@@ -149,25 +158,12 @@ HRESULT Player::Update()
 			invincibleTime = 0;
 		}
 		//-------------------------------
+
 		//弾の更新
-		BulletUpdate();
+		AttackUpdate();
 
-
-		//---------------------デバッグ用コマンド------------------
-		//自爆コマンド
-		if (g_pInput->IsKeyTap(DIK_Y))
-		{
-			hp -= 2;
-			memory_break_hp = (PLAYER_HP - hp) * PLAYER_DM;
-		}
-
-		//即死コマンド
-		if (g_pInput->IsKeyTap(DIK_P))
-		{
-			hp -= 999;
-			memory_break_hp = (PLAYER_HP - hp) * PLAYER_DM;
-		}
-		//---------------------------------------------------------
+		//デバッグ用操作
+		DebugCommand();
 
 	}
 	return S_OK;
@@ -175,18 +171,33 @@ HRESULT Player::Update()
 
 //----------------------------------
 //機能：当たり判定
-//引数：pTarget		敵の情報
+//引数：pTarget		//オブジェクトの情報
 //戻値：成功
 //----------------------------------
 HRESULT Player::Hit(UnitBase* pTarget)
 {
+
+	HitEnemy((Enemy*)pTarget);			//敵との当たり判定
+	HitStage((Stage*)pTarget);			//ステージとの当たり判定
+	HitItem((RecoveryItem*)pTarget);	//アイテムとの当たり判定
+
+	return S_OK;
+}
+
+//----------------------------------
+//機能：当たり判定
+//引数：pEnemyにキャストしたpTargetの情報
+//戻値：成功
+//----------------------------------
+HRESULT Player::HitEnemy(Enemy* pEnemy)
+{
 	//--------------------エネミーとの衝突判定----------------------
 	//当たり判定を作る、X軸・Y軸・幅・高さが必要になる
-	if (typeid(*pTarget) == typeid(Enemy))
+	if (typeid(*pEnemy) == typeid(Enemy))
 	{
-		D3DXVECTOR3 enemyPosition = pTarget->GetPos();
-		RECT enemySize = pTarget->GetZone();
-	
+		D3DXVECTOR3 enemyPosition = pEnemy->GetPos();
+		RECT enemySize = pEnemy->GetZone();
+
 		//当たり判定を出すための計算
 		int distance =
 			(int)(position.x - enemyPosition.x) *
@@ -211,22 +222,56 @@ HRESULT Player::Hit(UnitBase* pTarget)
 		for (int i = 0; i < BULLET_SET; i++)
 		{
 			//キャスト演算子を利用しUnitBase*からEnemy*に無理やり変えてしまう
-			BOOL b = bullet[i].Hit((Enemy*)pTarget);
+			BOOL b = bullet[i].Hit(pEnemy);
 
 		}
 
 		//ブレードのヒット処理
-		bread.Hit((Enemy*)pTarget);
+		bread.Hit(pEnemy);
 	}
 	//--------------------------------------------------------------
 
 
+	return S_OK;
+}
+
+//----------------------------------
+//機能：当たり判定
+//引数：pStageにキャストしたpTargetの情報
+//戻値：成功
+//----------------------------------
+HRESULT Player::HitStage(Stage* pStage)
+{
+	//-----------PlaySceneで呼び出したステージをstgに入れる---------
+	if (typeid(*pStage) == typeid(Stage))
+	{
+		/*
+		* pTargetはUnitBaseのサブクラスならポインタを通じて確認が出来る
+		* つまり、PlaySceneでStageを呼び出しているので、それをstgに入れればよい！
+		* そうすれば2回呼ぶことでの不正な値の習得はなくなる。
+		*
+		* ～～～～～～～～～～～オマケ～～～～～～～～～～
+		* シングルトンという法則があり、知ることでnewをより効率的に使えるようになるらしい！
+		*/
+		stg = (Stage*)pStage;
+	}
+	//--------------------------------------------------------------
+	return S_OK;
+}
+
+//----------------------------------
+//機能：当たり判定
+//引数：pItemにキャストしたpTargetの情報
+//戻値：成功
+//----------------------------------
+HRESULT Player::HitItem(RecoveryItem* pItem)
+{
 	//--------------------アイテムとの衝突判定----------------------
 	//当たり判定を作る、X軸・Y軸・幅・高さが必要になる
-	if (typeid(*pTarget) == typeid(item))
+	if (typeid(*pItem) == typeid(RecoveryItem))
 	{
-		D3DXVECTOR3 itemPosition = pTarget->GetPos();
-		RECT itemSize = pTarget->GetZone();
+		D3DXVECTOR3 itemPosition = pItem->GetPos();
+		RECT itemSize = pItem->GetZone();
 
 		//当たり判定を出すための計算
 		int distance =
@@ -238,26 +283,9 @@ HRESULT Player::Hit(UnitBase* pTarget)
 		//衝突判定
 		if (distance <= (PLAYER_SIZE * PLAYER_SIZE))
 		{
-
 			g_gameScene = SC_CLEAR;
 		}
 
-	}
-	//--------------------------------------------------------------
-
-
-	//-----------PlaySceneで呼び出したステージをstgに入れる---------
-	if (typeid(*pTarget) == typeid(Stage))
-	{
-		/*
-		 * pTargetはUnitBaseのサブクラスならポインタを通じて確認が出来る
-		 * つまり、PlaySceneでStageを呼び出しているので、それをstgに入れればよい！
-		 * そうすれば2回呼ぶことでの不正な値の習得はなくなる。
-		 *
-		 * ～～～～～～～～～～～オマケ～～～～～～～～～～
-		 * シングルトンという法則があり、知ることでnewをより効率的に使えるようになるらしい！
-		 */
-		stg = (Stage*)pTarget;
 	}
 	//--------------------------------------------------------------
 
@@ -347,7 +375,7 @@ HRESULT Player::Render()
 
 //----------------------------------
 //機能：自機の移動
-//引数：なし
+//引数：Stageの情報
 //戻値：成功
 //----------------------------------
 HRESULT Player::Move(Stage* stage)
@@ -360,19 +388,17 @@ HRESULT Player::Move(Stage* stage)
 	HitZone.bottom = 32 + position.y;
 	//---------------------------------------------
 
-	int moveS = 4;
+	moveS = 4;	//常に4をキープさせる
+
 	//----------------------プレイヤーの移動------------------------------
 	switch (state)
 	{
 
 		//---------------------通常移動----------------------
 	case DEFAULT:
-		/*
-		 *引数で受け取ったStageの中にステージの二次元配列があるので、それを受け取る
-		 */
 
 		//右移動の処理
-		if (g_pInput->IsKeyPush(DIK_RIGHT) && !ladderflg)
+		if (MOVE_RIGHT && !ladderflg)
 		{
 
 			if (stage->GetChip((int)(HitZone.right + moveS) / BLOCK_CHIP, (int)(HitZone.bottom) / BLOCK_CHIP) == 1
@@ -387,7 +413,7 @@ HRESULT Player::Move(Stage* stage)
 		}
 
 		//左移動の処理(旧判定)
-		if (g_pInput->IsKeyPush(DIK_LEFT) && !ladderflg)
+		if (MOVE_LEFT && !ladderflg)
 		{
 
 			if (stage->GetChip((int)(HitZone.left - moveS) / BLOCK_CHIP, (int)(HitZone.bottom) / BLOCK_CHIP) == 1 
@@ -401,73 +427,9 @@ HRESULT Player::Move(Stage* stage)
 			anime++;
 		}
 
-		//------------------要検証---------------------
-		//梯子での移動(なくすかも)
-		if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2
-			|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2)
-		{
-			//梯子下移動
-			if (g_pInput->IsKeyPush(DIK_DOWN))
-			{
-				//フラグ等々の乱立で見難いので後で要修正
-				direction = MS_UP;
-				isGround = TRUE;
-				ladderflg = TRUE;
-				jcount = 0;
-				jumpBlock = FALSE;
+		LadderMove(stage);	//梯子移動
+		Jump(stage);		//ジャンプ処理
 
-				//進行方向が壁(1)だった場合は移動出来ないようにする
-				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom + moveS) / BLOCK_CHIP) == 1)
-				{
-					moveS = 0;
-
-				}
-
-				position.y += moveS;
-				
-			}
-		//-----------------------------------------------------------------------------------------------
-			//梯子上移動
-			if (g_pInput->IsKeyPush(DIK_UP))
-			{
-				//フラグ等々の乱立で見難いので後で要修正
-				direction = MS_UP;
-				isGround = TRUE;
-				ladderflg = TRUE;
-				jcount = 0;
-
-				//進行方向が壁(1)だった場合は移動出来ないようにする
-				if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top - moveS) / BLOCK_CHIP) == 1)
-				{
-					moveS = 0;
-					jumpBlock = TRUE;
-
-				}
-				//上記の判定はrectのトップ(頭の位置)なので、ジャンプできないようにしてある。
-				//1ピクセルでも離れたらジャンプ可能にフラグを切り替える
-				else
-				{
-					jumpBlock = FALSE;
-				}
-				
-				//足の位置-5の高さからムーブの値を引いた値が0(何もない空間)に入る場合
-				if (stage->GetChip((int)HitZone.right/ BLOCK_CHIP, (int)(HitZone.bottom -5 -moveS) / BLOCK_CHIP) == 0
-					&& stage->GetChip((int)HitZone.left/ BLOCK_CHIP, (int)(HitZone.bottom -5 -moveS) / BLOCK_CHIP) == 0)
-				{
-					moveS = 0;
-					jumpBlock = TRUE;
-
-				}
-
-				position.y += -moveS;
-			}
-		}
-		//それ以外は梯子を掴んでいないと見なし、梯子フラグをFALSEに変える
-		else
-		{
-			ladderflg = FALSE;
-		}
-		
 
 		//プレイヤーが真ん中に来るよう、横スクロール位置を算出
 		g_stageScrollPosition.x = -position.x + (WINDOW_WIDTH / 2 - BLOCK_CHIP);
@@ -553,8 +515,18 @@ HRESULT Player::Move(Stage* stage)
 	}
 	//--------------------------------------------------------------------
 
+	return S_OK;
+}
+
+//----------------------------------
+//機能：自機のジャンプ処理
+//引数：Stageの情報
+//戻値：成功
+//----------------------------------
+HRESULT Player::Jump(Stage* stage)
+{
 	//--------------------------ジャンプする------------------------------
-	if ((g_pInput->IsKeyTap(DIK_SPACE) && (jcount < JUMP_COUNT)&&isGround) && !jumpBlock)
+	if (((g_pInput->IsKeyTap(DIK_SPACE) || g_pInput->IsPadButtonTap(XINPUT_GAMEPAD_X)) && (jcount < JUMP_COUNT) && isGround) && !jumpBlock)
 	{
 		jump = JUMP;
 		jcount++;
@@ -571,40 +543,41 @@ HRESULT Player::Move(Stage* stage)
 			jump = 10;
 		}
 		position.y += jump;
-		BMPIkun = (int)position.y;
+		guardman = (int)position.y;	//着地地点を番兵君に渡す
 	}
 
 	//プレイヤーの左下か右下の位置にジャンプの値を足した位置のテーブルの値が1だった時の処理
-	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1 
-		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1 
+	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + jump) / BLOCK_CHIP) == 1
 		&& !isGround)
 	{
 		//ポジション から引く値は (1フレーム前の自分のポジションを32で割った余り) + 1
- 		position.y -= (BMPIkun % BLOCK_CHIP) + 1;
+		position.y -= (guardman % BLOCK_CHIP) + 1;
 		isGround = TRUE;
 		jump = 0;
 		jcount = 0;
 	}
 	//isGroundがTRUEだった場合はジャンプをせずに足場がなくなったはず(1は足場or壁ブロック)
 	//ジャンプせずに落下判定に入る場合の処理が下記の処理となる(自由落下)
-	else if ((stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0 
-		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0) 
-		||(stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 2
-		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 2)
-		&& !ladderflg)
+	else if ((stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0
+		&& stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 0)		//右足と左足の真下が何もなかったら落下
+		|| (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 2
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.bottom + 2) / BLOCK_CHIP) == 2)		//落下時に右か左が梯子に触れても落下続行
+		&& !ladderflg)																							//FALSEなら落下続行
 	{
 		isGround = FALSE;
 		jump += GRAVITY;
 	}
 
 	//天井（と思われる場所）にぶつかった時
-	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.top + jump -3) / BLOCK_CHIP) == 1
-		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.top + jump -3) / BLOCK_CHIP) == 1)
+	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.top + jump - 3) / BLOCK_CHIP) == 1
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.top + jump - 3) / BLOCK_CHIP) == 1)
 	{
 		jump *= -1;
 		jump += GRAVITY;
 	}
 
+	//自分の頭が天井に接地してる際にジャンプ出来ない様にする
 	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)(HitZone.top - 3) / BLOCK_CHIP) == 1
 		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)(HitZone.top - 3) / BLOCK_CHIP) == 1)
 	{
@@ -616,12 +589,81 @@ HRESULT Player::Move(Stage* stage)
 	}
 	//--------------------------------------------------------------------
 
-	/*
-	 * ジャンプ中のテーブル判定で梯子(2)の部分の判定を行っていない
-	 * そのためかjumpに与えた数値(JUMP = -12)にGRAVITYの値がプラスされない現象が起きている
-	 * あくまで現状は仕様としてるが、後々判定で減らない仕様にしておきたい(明記したい)
-	 * 
-	 */
+	return S_OK;
+}
+
+//----------------------------------
+//機能：自機の梯子移動
+//引数：Stageの情報
+//戻値：成功
+//----------------------------------
+HRESULT Player::LadderMove(Stage* stage)
+{
+	//梯子での移動
+	if (stage->GetChip((int)(HitZone.right) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2
+		|| stage->GetChip((int)(HitZone.left) / BLOCK_CHIP, (int)((HitZone.bottom - HitZone.top) + position.y) / BLOCK_CHIP) == 2)
+	{
+		//梯子下移動
+		if (MOVE_UP)
+		{
+			//フラグ等々の乱立で見難いので後で要修正
+			direction = MS_UP;
+			isGround = TRUE;
+			ladderflg = TRUE;
+			jcount = 0;
+			jumpBlock = FALSE;
+
+			//進行方向が壁(1)だった場合は移動出来ないようにする
+			if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.bottom + moveS) / BLOCK_CHIP) == 1)
+			{
+				moveS = 0;
+
+			}
+
+			position.y += moveS;
+
+		}
+		//-----------------------------------------------------------------------------------------------
+		//梯子上移動
+		if (MOVE_DOWN)
+		{
+			//フラグ等々の乱立で見難いので後で要修正
+			direction = MS_UP;
+			isGround = TRUE;
+			ladderflg = TRUE;
+			jcount = 0;
+
+			//進行方向が壁(1)だった場合は移動出来ないようにする
+			if (stage->GetChip((int)((HitZone.right - HitZone.left) + position.x) / BLOCK_CHIP, (int)(HitZone.top - moveS) / BLOCK_CHIP) == 1)
+			{
+				moveS = 0;
+				jumpBlock = TRUE;
+
+			}
+			//上記の判定はrectのトップ(頭の位置)なので、ジャンプできないようにしてある。
+			//1ピクセルでも離れたらジャンプ可能にフラグを切り替える
+			else
+			{
+				jumpBlock = FALSE;
+			}
+
+			//足の位置-5の高さからムーブの値を引いた値が0(何もない空間)に入る場合
+			if (stage->GetChip((int)HitZone.right / BLOCK_CHIP, (int)(HitZone.bottom - 5 - moveS) / BLOCK_CHIP) == 0
+				&& stage->GetChip((int)HitZone.left / BLOCK_CHIP, (int)(HitZone.bottom - 5 - moveS) / BLOCK_CHIP) == 0)
+			{
+				moveS = 0;
+				jumpBlock = TRUE;
+
+			}
+
+			position.y += -moveS;
+		}
+	}
+	//それ以外は梯子を掴んでいないと見なし、梯子フラグをFALSEに変える
+	else
+	{
+		ladderflg = FALSE;
+	}
 
 	return S_OK;
 }
@@ -636,31 +678,8 @@ HRESULT Player::Shot()
 	//梯子につかまっているときは攻撃をさせない
 	if (ladderflg != TRUE)
 	{
-		//ブレード攻撃
-		if (g_pInput->IsKeyTap(DIK_X) && sp > 0)
-		{
-
-			BOOL c;
-			c = bread.bread(position + g_stageScrollPosition, direction);
-			//発射できた！
-			if (c == TRUE)
-			{
-				sp -= 3;
-				memory_break_sp = (PLAYER_SP - sp) * PLAYER_DM;
-				audio->Play("shoot");
-			}
-
-			//キーを押している
-			isSpecialFlg = TRUE;
-		}
-		else
-		{
-			//キーを離している
-			isSpecialFlg = FALSE;
-		}
-
 		//弾を発射する操作
-		if (g_pInput->IsKeyTap(DIK_Z) || g_pInput->IsPadButtonRelease(XINPUT_GAMEPAD_A))
+		if (ATTACK_A)
 		{
 			if (isShotKeyFlg == FALSE)
 			{
@@ -689,11 +708,47 @@ HRESULT Player::Shot()
 }
 
 //----------------------------------
+//機能：弾の発射と軌道
+//引数：なし
+//戻値：成功
+//----------------------------------
+HRESULT	Player::Slash()
+{
+	//梯子につかまっているときは攻撃をさせない
+	if (ladderflg != TRUE)
+	{
+		//ブレード攻撃
+		if (ATTACK_B && sp > 0)
+		{
+
+			BOOL c;
+			c = bread.bread(position + g_stageScrollPosition, direction);
+			//発射できた！
+			if (c == TRUE)
+			{
+				sp -= 3;
+				memory_break_sp = (PLAYER_SP - sp) * PLAYER_DM;
+				audio->Play("shoot");
+			}
+
+			//キーを押している
+			isSpecialFlg = TRUE;
+		}
+		else
+		{
+			//キーを離している
+			isSpecialFlg = FALSE;
+		}
+	}
+	return S_OK;
+}
+
+//----------------------------------
 //機能：弾の更新処理
 //引数：なし
 //戻値：なし
 //----------------------------------
-void Player::BulletUpdate()
+void Player::AttackUpdate()
 {
 	//弾の個数分ループする
 	for (int i = 0; i < BULLET_SET; i++)
@@ -710,7 +765,7 @@ void Player::BulletUpdate()
 		}
 	}
 
-	//追従させるためにポジションを渡しておく
+	//剣は追従させるためにポジションを渡しておく
 	bread.Update(position+g_stageScrollPosition);
 }
 
@@ -754,4 +809,41 @@ void Player::Invincible()
 	{
 		bonny = PEASE;
 	}
+}
+
+//----------------------------------
+//機能：デバッグ用コマンド集
+//引数：なし
+//戻値：なし
+//----------------------------------
+void Player::DebugCommand()
+{
+
+	//---------------------デバッグ用コマンド------------------
+	//自爆コマンド
+	if (g_pInput->IsKeyTap(DIK_Y))
+	{
+		hp -= 2;
+		memory_break_hp = (PLAYER_HP - hp) * PLAYER_DM;
+	}
+
+	//即死コマンド
+	if (g_pInput->IsKeyTap(DIK_P))
+	{
+		hp -= 999;
+		memory_break_hp = (PLAYER_HP - hp) * PLAYER_DM;
+	}
+
+	//SPゲージ回復
+	if (g_pInput->IsKeyTap(DIK_I) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_Y))
+	{
+		sp = PLAYER_SP;
+	}
+
+	//HPゲージ回復
+	if (g_pInput->IsKeyTap(DIK_U) || g_pInput->IsPadButtonPush(XINPUT_GAMEPAD_Y))
+	{
+		hp = PLAYER_HP;
+	}
+	//---------------------------------------------------------
 }

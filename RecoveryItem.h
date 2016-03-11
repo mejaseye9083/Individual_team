@@ -15,13 +15,13 @@
 extern D3DXVECTOR3 g_stageScrollPosition;
 
 //--------------アイテムクラス----------------------
-class item : public UnitBase
+class RecoveryItem : public UnitBase
 {
 	Sprite Recover_Aid;
 
 public:
-	item();
-	~item();
+	RecoveryItem();
+	~RecoveryItem();
 
 	//----------------------------------
 	//機能：画像・音楽データの読み込み
